@@ -1,67 +1,109 @@
 from farmbot import Farmbot
+import json
 import time
-import csv
-from datetime import datetime
+import requests
+import os
+from tqdm import tqdm
 from rich.console import Console
+from datetime import datetime
 
-# === FarmBot Credentials ===
+console = Console()
+
+# FarmBot credentials
 SERVER = 'https://my.farm.bot'
 EMAIL = 'pjesuraj@umes.edu'
 PASSWORD = 'umesfarmbot'
-MOISTURE_SENSOR_PIN = 59  # Analog pin for soil moisture sensor
 
 # === Authenticate and get token ===
 fb = Farmbot()
 TOKEN = fb.get_token(EMAIL, PASSWORD, SERVER)
+
+# Save token
+with open('farmbot_authorization_token.json', 'w') as f:
+    json.dump(TOKEN, f)
+
+# Load token
+with open('farmbot_authorization_token.json', 'r') as f:
+    TOKEN = json.load(f)
+
+fb.set_verbosity(2)
+
+# Setup authorization headers
+HEADERS = {
+    'Authorization': 'Bearer ' + TOKEN['token']['encoded'],
+    'Content-Type': "application/json"
+}
+
+# === Move to (0, 0, 0) to reset position ===
+console.print("Moving to (0, 0, 0) to reset position...", style="bold red")
+fb.move(x=0, y=0, z=0)
+time.sleep(5)
 
 # === Grid Configuration ===
 X_START = 600
 X_END = 5600
 Y_START = 500
 Y_END = 2500
-X_STEP = 1000
-Y_STEP = 1000
+STEP_SIZE = 1000
 
-# === Setup ===
-console = Console()
+x_range = list(range(X_START, X_END + 1, STEP_SIZE))
+y_range = list(range(Y_START, Y_END + 1, STEP_SIZE))
 
-# === Move to (0, 0, 0) to reset position ===
-console.print("🔄 Moving to (0, 0, 0) to reset position...", style="bold red")
-fb.move(x=0, y=0, z=0)
-time.sleep(5)
+# === Prepare output directory ===
+today = datetime.today().strftime('%b%d.%Y')  # e.g., Jun09.2025
+output_dir = f"farmbot_photos/{today}"
+os.makedirs(output_dir, exist_ok=True)
 
-# === CSV Output Setup ===
-today = datetime.now().strftime("%b%d.%Y")
-filename = f"soil_grid_readings_{today}.csv"
+# === Start scan ===
+console.print(f"Starting bed scan...", style="bold green")
 
-with open(filename, mode='w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(['Timestamp', 'X', 'Y', 'Soil Moisture'])
+visited_coords = []
+zigzag = False
 
-    for y in range(Y_START, Y_END + 1, Y_STEP):
-        for x in range(X_START, X_END + 1, X_STEP):
-            console.print(f"\n📍 Moving to ({x}, {y}, z=0)", style="bold green")
-            fb.move(x=x, y=y, z=0)
-            time.sleep(5)
+for y in y_range:
+    zigzag = not zigzag
+    row = x_range if zigzag else list(reversed(x_range))
 
-            # Step 1: Offset down to insert the probe
-            console.print("📉 Lowering probe into soil", style="yellow")
-            fb.move_relative(x=-50, y=0, z=-536)
-            time.sleep(1)
+    for x in row:
+        z = 0
+        console.print(f"Moving to ({x}, {y}, {z})...", style="bold cyan")
+        fb.move(x=x, y=y, z=z)
+        time.sleep(3)
 
-            # Step 2: Read soil moisture
-            console.print("🔍 Reading soil moisture...", style="cyan")
-            moisture = fb.read_pin(MOISTURE_SENSOR_PIN, mode='analog')
-            time.sleep(1)
+        console.print(f"Taking picture at ({x}, {y})...", style="bold yellow")
+        fb.take_photo()
+        visited_coords.append((x, y, z))
+        time.sleep(2)
 
-            # Step 3: Raise probe back up
-            console.print("📈 Lifting probe", style="yellow")
-            fb.move_relative(x=0, y=0, z=200)
-            time.sleep(1)
+console.print(f"Scan complete. Downloading all photos...", style="bold green")
 
-            # Step 4: Log the reading
-            timestamp = datetime.now().isoformat()
-            writer.writerow([timestamp, x, y, moisture])
-            console.print(f"🌱 Moisture at ({x}, {y}): {moisture}", style="cyan")
+# === Download all images after scan ===
+image_response = requests.get("https://my.farm.bot/api/images", headers=HEADERS)
 
-console.print(f"\n✅ Soil scan complete. Data saved to {filename}", style="bold blue")
+if image_response.status_code != 200:
+    console.print("Failed to retrieve image list.", style="bold red")
+    exit(1)
+
+all_images = image_response.json()
+
+# Filter today's images only
+today_prefix = datetime.today().strftime('%Y-%m-%d')
+todays_images = [img for img in all_images if img["created_at"].startswith(today_prefix)]
+
+# Sort by created time just in case
+todays_images = sorted(todays_images, key=lambda x: x["created_at"])
+
+# Match coordinates to images (assumes order is preserved)
+for coord, img in zip(visited_coords, todays_images):
+    x, y, z = coord
+    url = img["attachment_url"]
+    filename = f"coor.{x}.{y}.{z}.jpg"
+    save_path = os.path.join(output_dir, filename)
+
+    img_data = requests.get(url)
+    with open(save_path, "wb") as f:
+        f.write(img_data.content)
+    console.print(f"Saved {save_path}", style="bold green")
+
+console.print(f"All images saved to: {output_dir}", style="bold green bold")
+
