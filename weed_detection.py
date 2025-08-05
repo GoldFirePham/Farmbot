@@ -20,8 +20,8 @@ from collections import defaultdict
 console = Console()
 
 SERVER = 'https://my.farm.bot'
-EMAIL = <email>
-PASSWORD = <password>
+EMAIL = 'pjesuraj@umes.edu'
+PASSWORD = 'umesfarmbot'
 
 
 fb = Farmbot()
@@ -301,7 +301,7 @@ def save_detected_weeds(weed_coordinates, known_plants, issuer, headers):
         distances = [np.linalg.norm(np.array([wx, wy]) - np.array([kx, ky])) for kx, ky in known_positions]
         min_distance = min(distances) if distances else float("inf")
 
-        # Calculate dynamic radius based on detected dimensions
+        # Calculate dynamic radius based on detected dimensionirrigation.pys
         weed_radius = max(width, height) / 2  # Take half of the largest dimension
         # Ensure radius stays within reasonable bounds
         MIN_RADIUS = 5

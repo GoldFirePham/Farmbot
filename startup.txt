@@ -1,0 +1,9 @@
+cd ~/Downloads/FarmBotEnV/Farmbot
+python3 -m venv py_venv
+source venv/bin/activate
+
+
+
+Not nesscary
+pip install -r requirements.txt
+python -m pip install --upgrade farmbot
