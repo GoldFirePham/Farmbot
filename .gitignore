@@ -31,12 +31,16 @@ ENV/
 
 # FarmBot tokens and authentication data
 farmbot_authorization_token.json
-*_token.json
+*_token.json    or tools like virtualenv.
+
+
 
 # Image folders and data
 captured_images/
 weed_images/
 farmbot_images_*/
+farmbot_photos/
+photos/
 
 # Weed detection data
 detected_weeds.json
