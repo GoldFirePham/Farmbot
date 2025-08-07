@@ -1,9 +1,13 @@
 cd ~/Downloads/FarmBotEnV/Farmbot
 python3 -m venv py_venv
-source venv/bin/activate
+source py_venv/bin/activate
 
 
 
-Not nesscary
+Not nesscary, but need to do if it is your first time
 pip install -r requirements.txt
 python -m pip install --upgrade farmbot
+
+
+sudo apt update
+sudo apt upgrade
