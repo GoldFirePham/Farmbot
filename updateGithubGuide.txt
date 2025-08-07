@@ -1,0 +1,63 @@
+🔧 Part 1: One-time Setup (if not already done)
+
+
+1. Check if your Git remote is using SSH
+Run this in your project folder:
+git remote -v
+
+✅ You should see something like:
+origin  git@github.com:GoldFirePham/Farmbot.git (fetch)
+origin  git@github.com:GoldFirePham/Farmbot.git (push)
+
+❌ If it's showing HTTPS, switch it:
+git remote set-url origin git@github.com:GoldFirePham/Farmbot.git
+
+2. Make sure your SSH key is loaded
+You can load it like this:
+ssh-add ~/.ssh/id_ed25519
+
+If you get an error like "Could not open a connection to your authentication agent", run:
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+
+3. Test your SSH connection
+Make sure SSH to GitHub is working:
+ssh -T git@github.com
+
+You should see:
+Hi GoldFirePham! You've successfully authenticated, but GitHub does not provide shell access.
+
+🚀 Part 2: Update and Push Code Using SSH
+Once your SSH is set up and working, here’s what you do every time you want to update the code on GitHub:
+✅ Step-by-Step (inside your project folder)
+1. Navigate to your project folder
+cd ~/Downloads/FarmBotEnV/Farmbot
+
+2. Check what’s changed
+git status
+
+This shows files that have been added, modified, or deleted.
+
+3. Stage the changes
+To add all changes:
+git add .
+
+Or add specific files:
+git add filename.py another_file.txt
+
+4. Commit your changes
+git commit -m "Describe what you changed"
+
+Example:
+git commit -m "Added irrigation scheduling script"
+
+5. Push the changes to GitHub
+If you're on the main branch:
+git push origin main
+
+Or if you're on master: //not on it
+git push origin master
+
+SSH will automatically authenticate without asking for a username or password.
+🧠 Optional: View commit history
+git log --oneline
