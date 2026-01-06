@@ -1,6 +1,8 @@
 cd ~/Downloads/FarmBotEnV/Farmbot
 python3 -m venv py_venv
-source py_venv/bin/activate
+
+Window Command Line:  py_venv\Scripts\activate
+Linux: source py_venv/bin/activate
 
 
 
