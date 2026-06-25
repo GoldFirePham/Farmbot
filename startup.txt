@@ -6,7 +6,7 @@ Linux: source py_venv/bin/activate
 
 
 
-Not nesscary, but need to do if it is your first time:
+Not necessary, but need to do if it is your first time:
 pip install -r requirements.txt
 python -m pip install --upgrade farmbot
 
